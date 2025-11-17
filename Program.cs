@@ -1,12 +1,10 @@
-﻿
-using CsvWorker.BLL.Options;
+﻿using CsvWorker.BLL.Options;
 using CsvWorker.BLL.Services;
 using CsvWorker.DAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((ctx, cfg) =>
@@ -18,19 +16,11 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((ctx, services) =>
     {
         var configuration = ctx.Configuration;
-
         services.Configure<CsvReaderOptions>(configuration.GetSection("Importer"));
-
         var conn = configuration.GetConnectionString("DefaultConnection");
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(conn));
-
+        services.AddDbContext<AppDbContext>(options => options.UseSqlServer(conn));
         services.AddTransient<CsvReaderService>();
         services.AddTransient<CsvImporterService>();
-    })
-    .ConfigureLogging(logging =>
-    {
-        logging.AddConsole();
     })
     .Build();
 
@@ -43,22 +33,16 @@ using (var scope = host.Services.CreateScope())
 using (var scope = host.Services.CreateScope())
 {
     var importer = scope.ServiceProvider.GetRequiredService<CsvImporterService>();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var csvFilePath = configuration.GetValue<string>("CsvFilePath") ?? throw new InvalidOperationException("CsvFilePath is not set.");
 
-    var csvFilePath = host.Services.GetRequiredService<IConfiguration>()
-        .GetValue<string>("CsvFilePath");
-
-    int totalInserted = 0;
     try
     {
-        importer.Import(csvFilePath, out totalInserted);
-    }
-    catch(Exception e)
-    {
-        Console.WriteLine(e.Message);        
-    }
-    finally
-    {
+        importer.Import(csvFilePath, out var totalInserted);
         Console.WriteLine($"Inserted {totalInserted} trips.");
     }
-
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Import failed: {ex.Message}");
+    }
 }
