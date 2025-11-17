@@ -36,6 +36,10 @@ using (var scope = host.Services.CreateScope())
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     var csvFilePath = configuration.GetValue<string>("CsvFilePath") ?? throw new InvalidOperationException("CsvFilePath is not set.");
 
+    var allowedDir = Path.Combine(AppContext.BaseDirectory);
+    Directory.CreateDirectory(allowedDir);
+    csvFilePath = EnsureSafeCsvPath(csvFilePath, allowedDir);
+
     try
     {
         importer.Import(csvFilePath, out var totalInserted);
@@ -45,4 +49,13 @@ using (var scope = host.Services.CreateScope())
     {
         Console.WriteLine($"Import failed: {ex.Message}");
     }
+}
+
+static string EnsureSafeCsvPath(string filePath, string allowedBaseDirectory)
+{
+    var full = Path.GetFullPath(filePath);
+    var baseDir = Path.GetFullPath(allowedBaseDirectory);
+    if (!full.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
+        throw new UnauthorizedAccessException("CSV path not allowed.");
+    return full;
 }
