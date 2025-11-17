@@ -24,6 +24,9 @@ namespace CsvWorker.Entities
         public decimal? FareAmount { get; set; }
 
         public decimal? TipAmount { get; set; }
+
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        public int TripDurationSeconds { get; private set; }
     }
 
 }

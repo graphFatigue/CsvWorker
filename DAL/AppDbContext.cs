@@ -62,6 +62,14 @@ namespace CsvWorker.DAL
              .HasColumnName("DOLocationID")
              .HasColumnType("int");
 
+            e.Property(x => x.TripDurationSeconds)
+            .HasColumnName("trip_duration_seconds")
+            .HasComputedColumnSql("DATEDIFF(SECOND, tpep_pickup_datetime, tpep_dropoff_datetime)", stored: true);
+
+            e.HasIndex(x => x.PuLocationId).HasDatabaseName("IX_trips_PULocationID");
+            e.HasIndex(x => x.TripDistance).HasDatabaseName("IX_trips_TripDistance");
+            e.HasIndex(x => x.TripDurationSeconds).HasDatabaseName("IX_trips_TripDurationSeconds");
+
             base.OnModelCreating(modelBuilder);
         }
     }
